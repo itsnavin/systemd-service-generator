@@ -11,7 +11,7 @@ test('accessible controls, responsive layout and local-only generation', async (
   await page.goto('./');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Give your process');
   await expect(page.getByRole('button', { name: /Download .service/ })).toBeEnabled();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await page.getByLabel('Service name *', { exact: true }).fill('sensor-app');
   await expect(page.locator('#filename')).toHaveText('sensor-app.service');
   await page.getByRole('button', { name: 'Add argument' }).click();
@@ -115,4 +115,13 @@ test('environment rows, literal values, dependencies and timeout validation', as
   await expect(page.locator('#preview')).toContainText('TimeoutStartSec=60s');
   await page.getByRole('button', { name: 'Remove variable 1' }).click();
   await expect(page.locator('#preview')).not.toContainText('Environment=');
+});
+
+test('long names and commands stay contained at narrow and intermediate widths', async ({ page }) => {
+  await page.goto('./');
+  await page.locator('#name').fill('a'.repeat(64));
+  for (const width of [320, 390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `page overflow at ${width}px`).toBe(true);
+  }
 });

@@ -102,6 +102,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .errors li { padding: 4px 0; }
 .errors a { color: inherit; }
 .installation { border-top: 1px solid var(--line); padding: 48px 0; display: grid; grid-template-columns: .7fr 1fr; gap: 90px; }
+.installation > div { min-width: 0; }
 .installation > div > p:not(.eyebrow) { color: var(--muted); font-size: 14px; line-height: 1.8; max-width: 340px; }
 .installation h2 { font-size: 30px; }
 .installation article { margin-bottom: 30px; }

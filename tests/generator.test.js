@@ -136,4 +136,7 @@ test('guide switches manager, target, journal and safe destination without auto-
     assert.match(guide, /does not run the service/);
     assert.doesNotMatch(guide, /loginctl enable-linger/);
   }
+  const leadingDash = JSON.stringify(installGuide({ ...defaults(), name: '-app' }));
+  assert.match(leadingDash, /start -- -app\.service/);
+  assert.match(leadingDash, /cat -- -app\.service/);
 });
