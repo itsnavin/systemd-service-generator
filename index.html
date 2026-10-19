@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#152823">
+    <meta name="description" content="Build an Ubuntu systemd service file with guided configuration, a live preview, and safe installation instructions. Everything stays in your browser.">
+    <title>Unitcraft - Ubuntu service generator</title>
+    <link rel="stylesheet" href="./src/style.css">
+    <script type="module" src="./src/app.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="Unitcraft home"><span class="brand-mark" aria-hidden="true">u_</span>unitcraft<span class="brand-divider">/</span><span class="brand-sub">systemd generator</span></a>
+      <span class="privacy"><span aria-hidden="true"></span> Local by design. No uploads.</span>
+    </header>
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">FROM EXECUTABLE TO UBUNTU SERVICE</p>
+        <h1 id="page-title">Give your process<br>a proper home.</h1>
+        <p class="intro-copy">Configure a service, understand what it does, and take the unit file with you. No terminal wizardry required.</p>
+        <div class="compat"><span>Ubuntu 22.04 / 24.04 LTS</span><span>systemd 249+</span><span>100% client-side</span></div>
+      </section>
+      <section class="workspace" aria-label="Service generator">
+        <div class="configuration">
+          <div class="section-heading"><div><p class="eyebrow">01 / CONFIGURE</p><h2>Your service, your rules.</h2></div><span class="small-note">* Required</span></div>
+          <fieldset class="presets"><legend>Start with a recipe <span class="optional">(replaces configuration)</span></legend>
+            <button type="button" data-preset="native" aria-pressed="true"><span aria-hidden="true">C_</span><strong>Native executable</strong><small>Long-running C / C++ app</small></button>
+            <button type="button" data-preset="python" aria-pressed="false"><span aria-hidden="true">Py</span><strong>Python script</strong><small>Interpreter + script path</small></button>
+            <button type="button" data-preset="oneshot" aria-pressed="false"><span aria-hidden="true">1x</span><strong>One-time task</strong><small>Run once, then exit</small></button>
+          </fieldset>
+          <form id="service-form" novalidate>
+            <section class="form-section" aria-labelledby="identity-title">
+              <h3 id="identity-title"><span>01</span> The essentials</h3>
+              <div class="field"><label for="mode">Run as</label><select id="mode"><option value="user">User service - your login account</option><option value="system">System service - machine-wide</option></select><p class="hint" id="mode-hint">Runs as your current account, without sudo. Usually stops after your last login session ends.</p></div>
+              <div class="field"><label for="name">Service name *</label><div class="suffix-input"><input id="name" required maxlength="64" aria-describedby="name-hint"><span>.service</span></div><p class="hint" id="name-hint">Letters, numbers, dashes, underscores. Don't include .service.</p></div>
+              <div class="field"><label for="description">Description *</label><input id="description" required maxlength="200"><p class="hint">One line, no backslashes or leading/trailing whitespace.</p></div>
+              <div class="field"><label for="type">Service type</label><select id="type"><option value="exec">exec - confirm the executable starts</option><option value="simple">simple - consider started immediately</option><option value="oneshot">oneshot - wait for the task to finish</option></select><p class="hint" id="type-hint"></p></div>
+              <div id="oneshot-fields" hidden><label class="check"><input id="remainAfterExit" type="checkbox"> Keep active after a successful exit (RemainAfterExit)</label><p class="hint">No process stays running. Without an ExecStop action, stopping only resets the unit's state.</p></div>
+            </section>
+            <section class="form-section" aria-labelledby="command-title">
+              <h3 id="command-title"><span>02</span> What should run?</h3>
+              <div class="field"><label for="executable">Executable path *</label><input id="executable" required spellcheck="false"><p class="hint">Absolute Linux file path. No ~, quotes, backslashes, glob characters, dot segments or outer whitespace. Internal spaces are allowed. Install the executable separately.</p></div>
+              <fieldset class="dynamic-field"><legend>Arguments <span class="optional">optional</span></legend><p class="hint">One row = one exact argument. Spaces and quotes are literal; an empty row passes an empty argument. Do not add shell quotes. No shell, pipes or redirects are invoked.</p><div id="arguments"></div><button class="add-button" id="add-argument" type="button">+ Add argument</button></fieldset>
+              <div class="field"><label for="workingDirectory">Working directory <span class="optional">optional</span></label><input id="workingDirectory" placeholder="/opt/my-app" spellcheck="false"><p class="hint">Absolute, normalized path with the same restrictions as above, already present and accessible.</p></div>
+              <div id="system-fields" hidden>
+                <div class="two-columns"><div class="field"><label for="user">Existing user *</label><input id="user" placeholder="e.g. appuser" autocomplete="off"><p class="hint">Lowercase username or UID. No account is created. Prefer a dedicated, unprivileged account.</p></div><div class="field"><label for="group">Existing group <span class="optional">optional</span></label><input id="group" placeholder="User's default group" autocomplete="off"></div></div>
+                <label class="check warning"><input id="allowRoot" type="checkbox"> I deliberately want root privileges (required for root or UID 0).</label>
+              </div>
+            </section>
+            <section class="form-section" aria-labelledby="lifecycle-title">
+              <h3 id="lifecycle-title"><span>03</span> Keep things predictable</h3>
+              <div class="two-columns"><div class="field"><label for="restart">Restart policy</label><select id="restart"><option value="on-failure">On failure</option><option value="no">Never</option><option value="always">Always</option><option value="on-abnormal">On signal / timeout / watchdog</option></select></div><div class="field"><label for="restartSec">Restart delay (seconds)</label><input id="restartSec" type="number" min="0" max="86400"></div></div>
+              <p class="hint">A manual stop never triggers a restart. oneshot cannot use Always. Rate limits can stop a failing restart loop; inspect logs before reset-failed.</p>
+              <div class="two-columns"><div class="field"><label for="startLimitInterval">Start-limit window (seconds)</label><input id="startLimitInterval" type="number" min="1" max="86400"></div><div class="field"><label for="startLimitBurst">Maximum starts in window</label><input id="startLimitBurst" type="number" min="1" max="1000"></div></div>
+              <details><summary>Timeouts, dependencies & environment</summary>
+                <div class="two-columns"><div class="field"><label for="timeoutStart">Start timeout (seconds)</label><input id="timeoutStart" type="number" min="1" max="86400"></div><div class="field"><label for="timeoutStop">Stop timeout (seconds)</label><input id="timeoutStop" type="number" min="1" max="86400"></div></div>
+                <p class="hint">For oneshot, the start timeout covers the entire task. For exec/simple it does not wait for application readiness. Stop timeout limits graceful shutdown before forced termination.</p>
+                <div class="field"><label for="after">After <span class="optional">ordering only</span></label><input id="after" placeholder="e.g. another-app.service" spellcheck="false"></div>
+                <div class="field"><label for="wants">Wants <span class="optional">weak activation</span></label><input id="wants" placeholder="e.g. another-app.service" spellcheck="false"></div>
+                <div class="field"><label for="requires">Requires <span class="optional">required activation</span></label><input id="requires" placeholder="e.g. another-app.service" spellcheck="false"></div>
+                <p class="hint">Space-separated literal unit names in the same manager. After orders units only if both start; it does not start them. Wants/Requires pull units in but do not order them. Pair with After when needed. Failure of a required dependency prevents startup when also ordered After it.</p>
+                <p class="hint">System services may use Wants + After = network-online.target if truly needed. It requires a configured wait-online provider, is only a boot-time synchronization point, and guarantees neither internet/DNS nor ongoing connectivity. User units cannot order after system-manager targets.</p>
+                <fieldset class="dynamic-field"><legend>Environment variables <span class="optional">optional</span></legend><div id="environment"></div><button class="add-button" id="add-environment" type="button">+ Add variable</button><p class="hint">Not secret storage. Values are literal, not shell-expanded. Avoid passwords and tokens.</p></fieldset>
+                <div class="field"><label for="environmentFile">Environment file <span class="optional">optional</span></label><input id="environmentFile" placeholder="/etc/my-app/environment" spellcheck="false"><p class="hint">Absolute, normalized path. Required if specified: missing files fail startup. Use systemd environment-file syntax (KEY=value), not a shell script: no export or command substitution. File values override matching inline variables. Review ownership and permissions.</p></div>
+              </details>
+              <details id="hardening-fields" hidden><summary>Optional system-service hardening</summary>
+                <p class="hint">Opt in after checking app requirements. These can break legitimate access; this is not a complete sandbox.</p>
+                <label class="check"><input id="noNewPrivileges" type="checkbox"> NoNewPrivileges - prevent gaining privileges via exec</label>
+                <label class="check"><input id="privateTmp" type="checkbox"> PrivateTmp - isolate /tmp and /var/tmp (breaks shared temp files)</label>
+                <label class="check"><input id="protectSystem" type="checkbox"> ProtectSystem=full - make /usr, /boot, /efi and /etc read-only</label>
+                <label class="check"><input id="protectHome" type="checkbox"> ProtectHome=read-only - prevent writes under /home, /root and /run/user</label>
+                <p class="hint">Namespace protections require kernel/container support. Inspect startup errors on the target host.</p>
+              </details>
+            </section>
+          </form>
+          <p class="local-note">Your configuration stays on this page. Refreshing resets it.</p>
+        </div>
+        <aside class="output" aria-labelledby="preview-title">
+          <div class="preview-sticky">
+            <div class="section-heading"><div><p class="eyebrow">02 / REVIEW & EXPORT</p><h2 id="preview-title">Ready for your machine.</h2></div></div>
+            <div class="code-window"><div class="code-toolbar"><span><span class="file-dot" aria-hidden="true"></span><span id="filename">my-app.service</span></span><span id="valid-badge" class="valid-badge">Ready to review</span></div><pre aria-label="Generated service unit" tabindex="0"><code id="preview"></code></pre><div class="code-footer">UTF-8 <span>LF / final newline included</span></div></div>
+            <div id="errors" class="errors" role="alert" hidden></div>
+            <div class="export-actions"><button type="button" id="download" class="primary-button">Download .service <span aria-hidden="true">&darr;</span></button><button type="button" id="copy" class="secondary-button">Copy unit</button></div>
+            <p id="status" class="status" role="status" aria-live="polite"></p>
+            <textarea id="manual-copy" readonly hidden aria-label="Manual unit copy"></textarea>
+            <div class="callout"><strong>A file, not an installer.</strong><p>Review before use. This page does not install apps, create users, change permissions, or start services. Paths and accounts are examples, not verified resources.</p></div>
+            <details class="anatomy"><summary>What's in a unit file?</summary><p><strong>[Unit]</strong> describes the service and its relationships.</p><p><strong>[Service]</strong> defines the process, account, restart policy and journal logging.</p><p><strong>[Install]</strong> says which target enabling links to. It does not start anything by itself.</p><p>All inputs are literal. % specifiers become %%, and the ExecStart ":" prefix disables $ expansion. No arbitrary directives or expansion mode is offered.</p></details>
+          </div>
+        </aside>
+      </section>
+      <section class="installation" aria-labelledby="install-title">
+        <div><p class="eyebrow">03 / ON YOUR UBUNTU MACHINE</p><h2 id="install-title">Review first. Run second.</h2><p>A valid file doesn't prove your app will run. Check accounts, paths, permissions, dependencies and the journal on the target host.</p></div>
+        <div id="instructions"></div>
+      </section>
+      <section class="resources" aria-label="Official documentation"><strong>Go straight to the source</strong><a href="https://www.freedesktop.org/software/systemd/man/249/systemd.service.html" target="_blank" rel="noopener noreferrer">Service types &nearr;</a><a href="https://www.freedesktop.org/software/systemd/man/249/systemd.exec.html" target="_blank" rel="noopener noreferrer">Execution & escaping &nearr;</a><a href="https://www.freedesktop.org/software/systemd/man/249/systemd.unit.html" target="_blank" rel="noopener noreferrer">Dependencies &nearr;</a><a href="https://documentation.ubuntu.com/server/" target="_blank" rel="noopener noreferrer">Ubuntu server docs &nearr;</a></section>
+    </main>
+    <footer><span class="brand">unitcraft<span class="brand-divider">/</span><span class="brand-sub">Small file. Less guesswork.</span></span><a href="https://github.com/itsnavin/systemd-service-generator">Source on GitHub &nearr;</a></footer>
+    <noscript>This generator requires JavaScript. All processing happens locally in your browser.</noscript>
+  </body>
+</html>
