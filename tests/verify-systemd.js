@@ -13,6 +13,10 @@ assert.ok(Number(version.stdout.match(/systemd (\d+)/)?.[1]) >= 249, 'systemd 24
 const directory = mkdtempSync(join(tmpdir(), 'unitcraft-'));
 const fixtureUser = userInfo().username;
 try {
+  // Isolate the test graph from unrelated units/packages on the runner image.
+  for (const target of ['basic', 'sysinit', 'shutdown', 'default', 'network-online']) {
+    writeFileSync(join(directory, `${target}.target`), '[Unit]\nDescription=Syntax-check target fixture\nDefaultDependencies=no\n');
+  }
   const working = join(directory, 'working space %n');
   const envFile = join(directory, 'environment space %n');
   const executable = join(directory, 'executable space %n $HOME');
@@ -40,7 +44,7 @@ try {
     const user = config.mode === 'user';
     const checked = spawnSync('systemd-analyze', [...(user ? ['--user'] : []), '--man=no', 'verify', path], {
       encoding: 'utf8',
-      env: { ...process.env, XDG_RUNTIME_DIR: join(directory, 'runtime'), SYSTEMD_LOG_LEVEL: 'warning', SYSTEMD_UNIT_PATH: `${directory}:${user ? '/etc/systemd/user:/usr/lib/systemd/user' : '/etc/systemd/system:/usr/lib/systemd/system'}` },
+      env: { ...process.env, XDG_RUNTIME_DIR: join(directory, 'runtime'), SYSTEMD_LOG_LEVEL: 'warning', SYSTEMD_UNIT_PATH: directory },
     });
     assert.equal(checked.status, 0, `${result.filename}: ${checked.stderr || checked.error}`);
     assert.equal(checked.stderr.trim(), '', `${result.filename} emitted warnings: ${checked.stderr}`);

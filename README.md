@@ -125,13 +125,15 @@ On **Ubuntu Linux**, with systemd 249+ installed:
 npm run test:systemd
 ```
 
-This creates temporary unit/environment/executable fixtures, runs only
+This creates temporary unit/target/environment/executable fixtures, runs only
 `systemd-analyze verify` for system/user configurations, fails on warnings, and
 cleans up its own temporary directory. It does **not** install files into manager
 directories, register/start jobs, reload a daemon or modify accounts. Harmless
 `/usr/bin/true` and `/usr/bin/python3` executable fixtures must be present.
 It checks syntax/resource resolution, not actual application execution or runtime
-argument delivery. Unit tests separately check exact escaping/output and reject
+argument delivery. The temporary target graph isolates tests from unrelated
+runner-package units; it does not validate the target host's real dependency graph.
+Unit tests separately check exact escaping/output and reject
 invalid combinations/injection attempts. Playwright checks desktop/mobile input,
 presets, errors, mode changes, clipboard success/denial and exact downloaded bytes.
 

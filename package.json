@@ -13,6 +13,6 @@
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
-    "vite": "6.4.1"
+    "vite": "6.4.4"
   }
 }
