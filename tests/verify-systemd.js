@@ -14,7 +14,7 @@ const directory = mkdtempSync(join(tmpdir(), 'unitcraft-'));
 const fixtureUser = userInfo().username;
 try {
   // Isolate the test graph from unrelated units/packages on the runner image.
-  for (const target of ['basic', 'sysinit', 'shutdown', 'default', 'network-online']) {
+  for (const target of ['basic', 'sysinit', 'shutdown', 'default', 'network-online', 'app-ready']) {
     writeFileSync(join(directory, `${target}.target`), '[Unit]\nDescription=Syntax-check target fixture\nDefaultDependencies=no\n');
   }
   const working = join(directory, 'working space %n');
@@ -32,7 +32,7 @@ try {
     { ...preset('oneshot'), mode: 'system', user: fixtureUser, allowRoot: true, executable: '/usr/bin/true', remainAfterExit: true },
     { ...preset('oneshot'), mode: 'system', user: fixtureUser, allowRoot: true, executable: '/usr/bin/true', restart: 'on-failure' },
     { ...preset('python'), mode: 'system', user: fixtureUser, allowRoot: true, args: ['-V'] },
-    { ...defaults(), executable: '/usr/bin/true', after: 'default.target' },
+    { ...defaults(), executable: '/usr/bin/true', after: 'app-ready.target', wants: 'app-ready.target' },
     { ...preset('oneshot'), executable: '/usr/bin/true', remainAfterExit: true },
   ];
   for (const [index, config] of cases.entries()) {

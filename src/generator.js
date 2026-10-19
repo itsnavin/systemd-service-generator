@@ -65,6 +65,7 @@ export function generate(config) {
     for (const unit of dependencies[field]) {
       if (!unitName.test(unit) || unit.length > 255 || unit.includes('..') || unit.startsWith('.')) fail(field, `${field}: "${unit}" is not a supported literal unit name.`);
       if (unit === `${config.name}.service`) fail(field, `${field}: a service cannot depend on itself.`);
+      if (field === 'after' && unit === (config.mode === 'user' ? 'default.target' : 'multi-user.target')) fail(field, `Do not order After=${unit}: enabling under that target would create an ordering cycle.`);
       if (config.mode === 'user' && systemTargets.has(unit)) fail(field, `${unit} belongs to the system manager; do not reference it from a user service.`);
     }
   }

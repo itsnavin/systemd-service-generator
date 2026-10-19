@@ -74,6 +74,8 @@ test('dependency ordering and activation stay distinct', () => {
   assert.ok(unit.includes('After=network-online.target other@instance.service\nWants=network-online.target\nRequires=other@instance.service\n'));
   assert.doesNotMatch(build({ wants: 'other.service' }).unit, /^After=/m);
   for (const after of ['network-online.target', 'multi-user.target', 'my-app.service', 'x@.service', 'x@@instance.service', 'a.service\nUser=root', 'a%nb.service', '*.service', 'a', '/a.service']) invalid({ after }, 'after');
+  invalid({ after: 'default.target' }, 'after');
+  invalid({ mode: 'system', user: 'appuser', after: 'multi-user.target' }, 'after');
 });
 
 test('rejects invalid names, control characters, raw directive injection and malformed paths', () => {

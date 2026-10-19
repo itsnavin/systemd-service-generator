@@ -57,6 +57,8 @@ Dependencies accept a conservative literal-unit-name subset, including instantia
 templates but not bare templates, escapes, specifiers or arbitrary snippets.
 Custom user-manager dependencies must exist in that manager; the UI rejects common
 system-only targets in user mode but cannot know all custom target semantics.
+Ordering After the unit's own enablement target is rejected to avoid the predictable
+ordering cycle; other host-specific dependency cycles still need target-host review.
 Lowercase account names or canonical numeric IDs are accepted; the host still decides
 whether those accounts exist. Configuring a differently named UID-0 account is not
 detectable by a static app: review the host's account mapping.
